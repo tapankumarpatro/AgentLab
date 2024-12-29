@@ -1,0 +1,5 @@
+__pycache__
+company_researcher/**/__pycache__/
+company_researcher/venv
+
+company_researcher/.env
