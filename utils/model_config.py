@@ -29,7 +29,7 @@ class ModelLoader:
             return self._model
             
         if self.config.model_type == "ollama":
-            self._model = Ollama(id=self.config.model_name)
+            self._model = Ollama(model=self.config.model_name, options={"temperature": 0.0})
         elif self.config.model_type == "gemini":
             if not self.config.api_key:
                 raise ValueError("API key is required for Gemini model")
@@ -50,6 +50,11 @@ class ModelLoader:
 ollama_config = ModelConfig(
     model_type="ollama",
     model_name="llama3.1:latest"
+)
+
+ollama_qwen_coder_tool_config = ModelConfig(
+    model_type="ollama",
+    model_name="hhao/qwen2.5-coder-tools:latest"
 )
 
 openai_config = ModelConfig(
