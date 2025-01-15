@@ -4,8 +4,10 @@ company_researcher/venv
 company_researcher/.env
 
 
-local_researcher/**/__pycache__/
-local_researcher/venv
-local_researcher/.env
+**/venv/
+**/__pycache__/
+**/.env
+**/Lib/
 
-local_researcher/venv/Lib
+**/crawenv/
+crawl4ai/crawlenv/
