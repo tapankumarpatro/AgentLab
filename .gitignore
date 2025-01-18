@@ -8,6 +8,8 @@ company_researcher/.env
 **/__pycache__/
 **/.env
 **/Lib/
+**/tmp/
 
 **/crawenv/
 crawl4ai/crawlenv/
+clickup_agent/example.txt

@@ -1,11 +1,11 @@
 import os 
 from phi.agent import Agent
 from phi.model.ollama import Ollama
-from dotenv import load_dotenv
 from phi.model.openai import OpenAIChat
 from phi.model.google import Gemini
 
-load_dotenv()
+from dotenv import load_dotenv, find_dotenv
+_=load_dotenv(find_dotenv())
 
 # NEW TOOL
 from clickup_tool import ClickUpTools

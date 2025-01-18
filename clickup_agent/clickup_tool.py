@@ -135,16 +135,14 @@ class ClickUpTools(Toolkit):
             return [task] if task else []
         return tasks_data
 
-    def list_tasks(self, space_name: str, list_name: str = None, task_name: str = None) -> str:
-        """List tasks in a space, optionally filtered by list name and task name.
+    def list_tasks(self, space_name: str) -> str:
+        """List all tasks in a space.
 
         Args:
             space_name (str): Name of the space to list tasks from
-            list_name (str, optional): Filter tasks by list name
-            task_name (str, optional): Filter tasks by task name
 
         Returns:
-            str: JSON string containing matching tasks
+            str: JSON string containing tasks
         """
         # Get space
         space = self._get_space(space_name)
@@ -157,33 +155,23 @@ class ClickUpTools(Toolkit):
         if not lists_data:
             return json.dumps({"error": f"No lists found in space '{space_name}'"}, indent=2)
 
-        # Filter lists if list_name provided
-        if list_name:
-            list_item = self._find_by_name(lists_data, list_name, "list")
-            if list_item:
-                lists_data = [list_item]
-            else:
-                return json.dumps({"error": f"List '{list_name}' not found"}, indent=2)
-
-        # Get tasks from all matching lists
+        # Get tasks from all lists
         all_tasks = []
         for list_info in lists_data:
-            tasks = self._get_tasks(list_info["id"], task_name)
+            tasks = self._get_tasks(list_info["id"])
             for task in tasks:
                 task["list_name"] = list_info["name"]  # Add list name for context
             all_tasks.extend(tasks)
 
         return json.dumps({"tasks": all_tasks}, indent=2)
 
-    def create_task(self, space_name: str, task_name: str, list_name: str = None, task_description: str = "", priority: int = None) -> str:
+    def create_task(self, space_name: str, task_name: str, task_description: str) -> str:
         """Create a new task in a space.
 
         Args:
             space_name (str): Name of the space to create task in
             task_name (str): Name of the task
-            list_name (str, optional): Name of the list to create task in (uses first list if not specified)
-            task_description (str, optional): Description of the task
-            priority (int, optional): Priority of the task (1-4)
+            task_description (str): Description of the task
 
         Returns:
             str: JSON string containing created task details
@@ -193,21 +181,50 @@ class ClickUpTools(Toolkit):
         if "error" in space:
             return json.dumps(space, indent=2)
 
-        # Get list
-        list_info = self._get_list(space["id"], list_name)
-        if "error" in list_info:
-            return json.dumps(list_info, indent=2)
+        # Get first list in space
+        lists = self._make_request("GET", f"space/{space['id']}/list")
+        lists_data = lists.get("lists", [])
+        if not lists_data:
+            return json.dumps({"error": f"No lists found in space '{space_name}'"}, indent=2)
+        
+        list_info = lists_data[0]  # Use first list
 
         # Create task
         data = {
             "name": task_name,
             "description": task_description
         }
-        if priority:
-            data["priority"] = priority
 
         task = self._make_request("POST", f"list/{list_info['id']}/task", data=data)
         return json.dumps(task, indent=2)
+
+
+    def list_spaces(self) -> str:
+        """List all spaces in the workspace.
+
+        Returns:
+            str: JSON string containing list of spaces
+        """
+        spaces = self._make_request("GET", f"team/{self.master_space_id}/space")
+        return json.dumps(spaces, indent=2)
+
+    def list_lists(self, space_name: str) -> str:
+        """List all lists in a space.
+
+        Args:
+            space_name (str): Name of the space to list lists from
+
+        Returns:
+            str: JSON string containing list of lists
+        """
+        # Get space
+        space = self._get_space(space_name)
+        if "error" in space:
+            return json.dumps(space, indent=2)
+
+        # Get lists
+        lists = self._make_request("GET", f"space/{space['id']}/list")
+        return json.dumps(lists, indent=2)
 
     def get_task(self, task_id: str) -> str:
         """Get details of a specific task.
@@ -248,65 +265,21 @@ class ClickUpTools(Toolkit):
             result = {"success": True, "message": f"Task {task_id} deleted successfully"}
         return json.dumps(result, indent=2)
 
-    def list_spaces(self, space_name: str = None) -> str:
-        """List all spaces in the workspace, optionally filtered by name.
-
-        Args:
-            space_name (str, optional): Filter spaces by name
-
-        Returns:
-            str: JSON string containing list of spaces
-        """
-        spaces = self._make_request("GET", f"team/{self.master_space_id}/space")
-        if space_name and "spaces" in spaces:
-            space = self._find_by_name(spaces["spaces"], space_name, "space")
-            if space:
-                spaces["spaces"] = [space]
-            else:
-                return json.dumps({"error": f"Space '{space_name}' not found"}, indent=2)
-        return json.dumps(spaces, indent=2)
-
-    def list_lists(self, space_name: str, list_name: str = None) -> str:
-        """List lists in a space, optionally filtered by name.
-
-        Args:
-            space_name (str): Name of the space to list lists from
-            list_name (str, optional): Filter lists by name
-
-        Returns:
-            str: JSON string containing list of lists
-        """
-        # Get space
-        space = self._get_space(space_name)
-        if "error" in space:
-            return json.dumps(space, indent=2)
-
-        # Get lists
-        lists = self._make_request("GET", f"space/{space['id']}/list")
-        if list_name and "lists" in lists:
-            list_item = self._find_by_name(lists["lists"], list_name, "list")
-            if list_item:
-                lists["lists"] = [list_item]
-            else:
-                return json.dumps({"error": f"List '{list_name}' not found"}, indent=2)
-        return json.dumps(lists, indent=2)
-
-
 # # Working example
 # if __name__ == "__main__":
 #     clickup_tools = ClickUpTools()
 
 #     # List all spaces or filter by name
 #     print("Listing spaces:")
-#     spaces = clickup_tools.list_spaces("My.*")  # Regex pattern match
+#     spaces = clickup_tools.list_spaces()  # Regex pattern match
 #     print(spaces)
 
 #     # List all lists in a space or filter by name
 #     print("\nListing lists in 'My Space':")
-#     lists = clickup_tools.list_lists("My Space", "Dev.*")  # Regex pattern match
+#     lists = clickup_tools.list_lists("My Space")  # Regex pattern match
 #     print(lists)
 
 #     # List all tasks in a space, optionally filtered by list and task name
 #     print("\nListing tasks in 'My Space':")
-#     tasks = clickup_tools.list_tasks("My Space", "Dev List", "Bug.*")  # Regex pattern matches
+#     tasks = clickup_tools.list_tasks("My Space")  # Regex pattern matches
 #     print(tasks)
