@@ -1,3 +1,5 @@
 phidata>=2.0.0
 openai>=1.6.1
-browser-use
+browser-use==0.1.19
+langchain_ollama
+langchain_openai

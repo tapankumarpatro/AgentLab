@@ -21,3 +21,4 @@ lxml_html_clean
 duckduckgo-search
 yfinance
 python-docx
+PyGithub

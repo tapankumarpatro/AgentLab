@@ -13,3 +13,8 @@ company_researcher/.env
 **/crawenv/
 crawl4ai/crawlenv/
 clickup_agent/example.txt
+
+
+multi_var_talk/
+browser_use/
+browser_use/requirements.txt
